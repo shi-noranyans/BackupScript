@@ -3,7 +3,7 @@ import re
 import os
 import shutil
 from datetime import datetime
-from zoneinfo import ZoneInfo
+import pytz
 import pyzipper
 import configparser
 from collections import defaultdict
@@ -11,7 +11,7 @@ from collections import defaultdict
 g_Saisin = "最新"
 g_Kako = "過去"
 g_Hozon = "保存"
-g_KugiriMoji = "/"
+g_KugiriMoji = "\\"
 g_allowSizeDifferece = 100000
 g_password = ''
 g_original = ''
@@ -36,7 +36,7 @@ def write_log(message):
     log_message = f"{now.strftime('%Y-%m-%d %H:%M:%S')} - {message}\n"
     
     # ログファイルに書き込む
-    with open(log_file_path, 'a') as file:
+    with open(log_file_path, 'a', encoding='utf-8') as file:
         file.write(log_message)
     
     print(message)
@@ -82,7 +82,8 @@ def execBackup(config_path):
         fileNames.append(fileName)
 
     # ３ヶ月前の年月を取得
-    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()    
+    tokyo_tz = pytz.timezone('Asia/Tokyo')
+    today = datetime.now(tokyo_tz).date()    
     threeMonthAgoYear = today.year
     threeMonthAgoMonth = today.month - 3
     if threeMonthAgoMonth <= 0:
@@ -106,7 +107,6 @@ def execBackup(config_path):
     all_processed_timestamps = set()
 
     originalFileSize = get_folder_size(g_original)
-    write_log(g_original + " : " + str(originalFileSize) + " bytes")
     for file in threeMonthAgoFiles:
         # 年月日部分を抽出
         date_match = re.match(r"(\d{4}年\d{2}月\d{2}日)", file)
@@ -118,10 +118,8 @@ def execBackup(config_path):
             if timestamps_by_month_day[year_month][day] is None or get_time_difference(file) < get_time_difference(timestamps_by_month_day[year_month][day]):
                 if timestamps_by_month_day[year_month][day] is not None:
                     all_processed_timestamps.remove(timestamps_by_month_day[year_month][day])
-                write_log(file)
                 fileSize = get_folder_size(file)
-                write_log(str(fileSize))
-                if (not (originalFileSize - fileSize > g_allowSizeDifferece)):
+                if (not (fileSize - originalFileSize > g_allowSizeDifferece)):
                     timestamps_by_month_day[year_month][day] = file
                     all_processed_timestamps.add(file)
 
@@ -139,6 +137,7 @@ def execBackup(config_path):
     
     empty_values = [None, '', [], {}]
     for key, value in toZipFilesDict.items():
+        write_log("value : " + str(value))
         if value in empty_values:
             write_log(key + "は空です。")
             continue
@@ -146,6 +145,7 @@ def execBackup(config_path):
         if not os.path.exists(newPath):
             os.makedirs(newPath)
         for file in value:
+            write_log(f'{g_path}{g_KugiriMoji}{g_Kako}{g_KugiriMoji}{file}')
             if os.path.exists(f'{g_path}{g_KugiriMoji}{g_Kako}{g_KugiriMoji}{file}'):
                 shutil.move(f'{g_path}{g_KugiriMoji}{g_Kako}{g_KugiriMoji}{file}', f'{newPath}{g_KugiriMoji}{file}')
         with pyzipper.AESZipFile(f'{newPath}.zip', 'w', compression=pyzipper.ZIP_DEFLATED) as zf:
@@ -158,12 +158,15 @@ def execBackup(config_path):
                     # ファイルをZIPファイルに追加
                     zf.write(file_path, arcname)
                     write_log("ZipTo : " + file_path)
-        shutil.rmtree(newPath)
         write_log(f'{newPath}.zip を作成しました。')
 
     for folder in toDeleteFileList:
         shutil.rmtree(f'{g_path}{g_KugiriMoji}{g_Kako}{g_KugiriMoji}{folder}')
         write_log(f'{folder} を削除しました。')
+
+    for key, value in toZipFilesDict.items():
+        newPath = f'{g_path}{g_KugiriMoji}{g_Hozon}{g_KugiriMoji}{key}'
+        shutil.rmtree(newPath)
 
 def load_config(config_path):
     global g_password
