@@ -41,6 +41,14 @@ for timestamp in timestamps:
             timestamps_by_month_day[year_month][day] = timestamp
             all_processed_timestamps.add(timestamp)
 
+# 年月ごとに最も8時に近いタイムスタンプをリストにまとめる
+toZipFilesDict = defaultdict(list)
+
+for year_month, days in timestamps_by_month_day.items():
+    for day, ts in days.items():
+        if ts:  # None でない場合のみ
+            toZipFilesDict[year_month].append(ts)
+
 # 抽出されたタイムスタンプを出力
 print("抽出されたタイムスタンプ:")
 for year_month, days in timestamps_by_month_day.items():

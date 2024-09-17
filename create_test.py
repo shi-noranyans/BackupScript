@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 
 # フォルダ作成の基本パス
-base_path = "./TEST"
+base_path = ".\\TEST"
 
 # 開始日と終了日を指定
 start_date = datetime(2024, 3, 15, 0, 0, 0)  # 例: 2023年9月1日 00:00:00
@@ -23,7 +23,7 @@ while current_date <= end_date:
     # フォルダが存在しない場合に作成
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-        with open(f'{folder_path}/a.txt', 'a') as a:
+        with open(f'{folder_path}\\a.txt', 'a') as a:
             a.write('aaa')
         print(f"フォルダ作成: {folder_path}")
     
