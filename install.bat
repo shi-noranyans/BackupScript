@@ -1,48 +1,59 @@
 @echo off
 setlocal
 
-:: バッチファイルが置かれているディレクトリに移動
+:: バッチファイルの場所にディレクトリを変更
 cd /d "%~dp0"
 
-echo Step 1: Changed directory to batch file location.
-pause
+:: PowerShellを使用して最新のPythonインストーラーURLを取得
+powershell -Command "$content = Invoke-WebRequest -Uri 'https://www.python.org/downloads/windows/'; $regex = [regex] 'https://www.python.org/ftp/python/[\d\.]+/python-[\d\.]+-amd64.exe'; $matches = $regex.Match($content.Content); if ($matches.Success) { $matches.Value } else { 'No match found' }" > url.txt
+set /p installer_url=<url.txt
 
-:: Pythonの最新版のURLを取得する
-echo Fetching the latest Python version...
-for /f "tokens=*" %%i in ('powershell -Command "(Invoke-WebRequest -Uri 'https://www.python.org/downloads/windows/').Content -match 'https://www.python.org/ftp/python/[\d\.]+/python-[\d\.]+-amd64.exe' | Out-Null; $matches[0]"') do set "installer_url=%%i"
-
-if not defined installer_url (
-    echo Failed to retrieve the latest Python version.
+:: URLが正常に取得されたか確認
+if "%installer_url%"=="No match found" (
+    echo 最新のPythonバージョンを取得できませんでした。
     pause
     exit /b 1
 )
 
-echo Step 2: Latest Python installer URL is %installer_url%.
-pause
+:: URLからファイル名を抽出
+for %%i in ("%installer_url%") do set filename=%%~nxi
 
-:: インストーラファイル名を抽出
-for /f "tokens=*" %%i in ('powershell -Command "$url='%installer_url%'; $url.Substring($url.LastIndexOf('/')+1)"') do set "installer=%%i"
-
-echo Step 3: Installer file name is %installer%.
-pause
-
-:: Pythonインストーラをダウンロード
-if not exist "%installer%" (
-    echo Downloading Python installer...
-    powershell -Command "Invoke-WebRequest -Uri '%installer_url%' -OutFile '%installer%'"
-    if %errorlevel% neq 0 (
-        echo Failed to download Python installer.
-        pause
-        exit /b 1
-    )
-    echo Python installer downloaded successfully.
+:: Pythonインストーラーを一時フォルダにダウンロード
+set temp_dir=%TEMP%
+set installer_path=%temp_dir%\%filename%
+echo Pythonインストーラーをダウンロード中...
+powershell -Command "Invoke-WebRequest -Uri '%installer_url%' -OutFile '%installer_path%' -ErrorAction Stop"
+if %ERRORLEVEL% neq 0 (
+    echo Pythonインストーラーのダウンロードに失敗しました。
     pause
+    exit /b 1
 )
 
-:: インストール先ディレクトリを設定
-set "install_dir=%USERPROFILE%\AppData\Local\Programs\Python\PythonLatest"
-set "python_scripts_dir=%install_dir%\Scripts"
+:: Pythonをインストール
+echo Pythonをインストール中...
+start /wait "" "%installer_path%" /quiet InstallAllUsers=1 PrependPath=1
 
-echo Step 4: Installing Python to %install_dir%.
+:: Pythonインストールを確認
+echo Pythonインストールを確認中...
+python --version
+if %ERRORLEVEL% neq 0 (
+    echo Pythonのインストールに失敗しました。
+    echo インストールログを確認してください。
+    pause
+    exit /b 1
+)
+
+:: 必要なライブラリをインストール
+echo 必要なライブラリをインストール中...
+pip install -r requirements.txt
+if %ERRORLEVEL% neq 0 (
+    echo 必要なライブラリのインストールに失敗しました。
+    pause
+    exit /b 1
+)
+
+:: クリーンアップ
+del "%installer_path%"
+
+echo インストールが正常に完了しました。
 pause
-
