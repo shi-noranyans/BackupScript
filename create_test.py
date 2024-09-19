@@ -1,8 +1,10 @@
 import os
 from datetime import datetime, timedelta
+import shutil
 
 # フォルダ作成の基本パス
 base_path = ".\\TEST"
+org_folder = "オリジナル"
 
 # 開始日と終了日を指定
 start_date = datetime(2024, 3, 15, 0, 0, 0)  # 例: 2023年9月1日 00:00:00
@@ -19,13 +21,16 @@ while current_date <= end_date:
     
     # 完全なパスを作成
     folder_path = os.path.join(base_path, folder_name)
-    
+    copy_folder_path = os.path.join(folder_path, org_folder)
+    print(copy_folder_path)
     # フォルダが存在しない場合に作成
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-        with open(f'{folder_path}\\a.txt', 'a') as a:
-            a.write('aaa')
         print(f"フォルダ作成: {folder_path}")
+    
+    shutil.copytree(org_folder, copy_folder_path)
+        # with open(f'{folder_path}\\a.txt', 'a') as a:
+        #     a.write('aaa')
     
     # 次の15分後に進める
     current_date += delta
