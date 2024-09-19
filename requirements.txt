@@ -1,4 +1,4 @@
 TkEasyGUI
 python-dateutil
-pyzipper
 pytz
+pyzipper
