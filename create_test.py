@@ -22,7 +22,6 @@ while current_date <= end_date:
     # 完全なパスを作成
     folder_path = os.path.join(base_path, folder_name)
     copy_folder_path = os.path.join(folder_path, org_folder)
-    print(copy_folder_path)
     # フォルダが存在しない場合に作成
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
