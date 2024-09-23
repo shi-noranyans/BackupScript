@@ -1,59 +1,28 @@
 @echo off
-setlocal
+set "installer_path=C:\temp\python-installer.exe"
+set "log_file=C:\temp\python_install.log"
 
-:: バッチファイルの場所にディレクトリを変更
-cd /d "%~dp0"
-
-:: PowerShellを使用して最新のPythonインストーラーURLを取得
-powershell -Command "$content = Invoke-WebRequest -Uri 'https://www.python.org/downloads/windows/'; $regex = [regex] 'https://www.python.org/ftp/python/[\d\.]+/python-[\d\.]+-amd64.exe'; $matches = $regex.Match($content.Content); if ($matches.Success) { $matches.Value } else { 'No match found' }" > url.txt
-set /p installer_url=<url.txt
-
-:: URLが正常に取得されたか確認
-if "%installer_url%"=="No match found" (
-    echo 最新のPythonバージョンを取得できませんでした。
-    pause
-    exit /b 1
+:: Python�̃C���X�g�[��
+if not exist "%installer_path%" (
+    echo Python���C���X�g�[������Ă��܂���B�C���X�g�[�����J�n���܂��B
+    set "download_url=https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe"
+    powershell -Command "Invoke-WebRequest -Uri '%download_url%' -OutFile '%installer_path%'"
+    echo �_�E�����[�h����: %installer_path%
 )
 
-:: URLからファイル名を抽出
-for %%i in ("%installer_url%") do set filename=%%~nxi
-
-:: Pythonインストーラーを一時フォルダにダウンロード
-set temp_dir=%TEMP%
-set installer_path=%temp_dir%\%filename%
-echo Pythonインストーラーをダウンロード中...
-powershell -Command "Invoke-WebRequest -Uri '%installer_url%' -OutFile '%installer_path%' -ErrorAction Stop"
-if %ERRORLEVEL% neq 0 (
-    echo Pythonインストーラーのダウンロードに失敗しました。
-    pause
-    exit /b 1
+echo Python�̃C���X�g�[�����J�n���܂�...
+cmd /c "%installer_path%" /quiet InstallAllUsers=1 PrependPath=1 >> "%log_file%" 2>&1
+set "install_error=%ERRORLEVEL%"
+if %install_error% neq 0 (
+    echo Python���������C���X�g�[������܂���ł����B�G���[�R�[�h: %install_error%
+    exit /b
 )
 
-:: Pythonをインストール
-echo Pythonをインストール中...
-start /wait "" "%installer_path%" /quiet InstallAllUsers=1 PrependPath=1
+echo Python���������C���X�g�[������܂����B
 
-:: Pythonインストールを確認
-echo Pythonインストールを確認中...
-python --version
-if %ERRORLEVEL% neq 0 (
-    echo Pythonのインストールに失敗しました。
-    echo インストールログを確認してください。
-    pause
-    exit /b 1
-)
-
-:: 必要なライブラリをインストール
-echo 必要なライブラリをインストール中...
+:: ���C�u�������X�g�̃t�@�C������C���X�g�[��
+echo ���C�u�����̃C���X�g�[�����J�n���܂�...
 pip install -r requirements.txt
-if %ERRORLEVEL% neq 0 (
-    echo 必要なライブラリのインストールに失敗しました。
-    pause
-    exit /b 1
-)
+echo ���C�u�����̃C���X�g�[�����������܂����B
 
-:: クリーンアップ
-del "%installer_path%"
-
-echo インストールが正常に完了しました。
 pause

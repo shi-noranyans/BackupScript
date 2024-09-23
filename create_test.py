@@ -7,8 +7,8 @@ base_path = ".\\TEST"
 org_folder = "オリジナル"
 
 # 開始日と終了日を指定
-start_date = datetime(2024, 3, 15, 0, 0, 0)  # 例: 2023年9月1日 00:00:00
-end_date = datetime(2024, 6, 1, 23, 59, 59)  # 例: 2023年9月1日 23:59:59
+start_date = datetime(2024, 5, 25, 0, 0, 0)  # 例: 2023年9月1日 00:00:00
+end_date = datetime(2024, 5, 26, 23, 59, 59)  # 例: 2023年9月1日 23:59:59
 
 # 日付の増加間隔を15分ごとに設定
 delta = timedelta(minutes=15)
